@@ -1,3 +1,5 @@
+'use strict';
+
 var vector = require('./vector');
 var matrix = require('./matrix');
 
@@ -52,7 +54,7 @@ NeuralNetwork.prototype.computeOutputs = function (xValues) {
   var ihSums = vector.applyMatrix([1.0].concat(this.inputs), this.ihWeights);
   this.ihOutputs = ihSums.map(sigmoid);
 
-  // TODO: Why different functions?
+  // TODO: Why different function `hyperTan`?
   var hoSums = vector.applyMatrix([1.0].concat(this.ihOutputs), this.hoWeights);
   this.outputs = hoSums.map(hyperTan);
 
@@ -62,7 +64,7 @@ NeuralNetwork.prototype.computeOutputs = function (xValues) {
 };
 
 NeuralNetwork.prototype.updateWeights = function (tValues, eta, alpha) {
-  var i;
+  var i, j;
   var derivative, sum, delta;
   var outputGradients = vector.make(this.outputCount);
   var hiddenGradients = vector.make(this.hiddenCount);
@@ -71,13 +73,15 @@ NeuralNetwork.prototype.updateWeights = function (tValues, eta, alpha) {
     throw new Error('Target values not same length as output.');
   }
 
-  // Compute output gradients
+  // -- Calculate gradients.
+
+  // Compute output gradients.
   for (i = 0; i < this.outputCount; i++) {
     derivative = (1 - this.outputs[i]) * (1 + this.outputs[i]);
     outputGradients[i] = derivative * (tValues[i] - this.outputs[i]);
   }
 
-  // Compute hidden gradients
+  // Compute hidden gradients.
   for (i = 0; i < this.hiddenCount; i++) {
     derivative = (1 - this.ihOutputs[i]) * this.ihOutputs[i];
     sum = 0.0;
@@ -87,20 +91,20 @@ NeuralNetwork.prototype.updateWeights = function (tValues, eta, alpha) {
     hiddenGradients[i] = derivative * sum;
   }
 
-  // Update input-to-hidden weights
+  // -- Update weights.
+
+  // Update input-to-hidden weights.
   for (i = 0; i < this.inputCount + 1; i++) {
     for (j = 0; j < this.hiddenCount; j++) {
-      // TODO: This is confusing. Add bias to inputs?
       delta = eta * hiddenGradients[j] * (i === 0 ? 1.0 : this.inputs[i - 1]);
       this.ihWeights[i][j] += delta + alpha * this.ihPrevWeightsDelta[i][j];
       this.ihPrevWeightsDelta[i][j] = delta;
     }
   }
 
-  // Update hidden-to-output weights
+  // Update hidden-to-output weights.
   for (i = 0; i < this.hiddenCount + 1; i++) {
     for (j = 0; j < this.outputCount; j++) {
-      // TODO: This is confusing. Add bias to ihOutputs?
       delta = eta * outputGradients[j] * (i === 0 ? 1.0 : this.ihOutputs[i - 1]);
       this.hoWeights[i][j] += delta + alpha * this.hoPrevWeightsDelta[i][j];
       this.hoPrevWeightsDelta[i][j] = delta;
@@ -113,43 +117,18 @@ NeuralNetwork.prototype.setWeights = function (weights) {
   if (weights.length !== totalWeights) {
     throw new Error('Different length!');
   }
+  var offset = 0;
 
-  var i, j;
-  var k = 0;
+  this.ihWeights = matrix.reshape(weights, this.inputCount + 1, this.hiddenCount, offset);
+  offset += (this.inputCount + 1) * this.hiddenCount;
 
-  for (i = 0; i < this.inputCount + 1; i++) {
-    for (j = 0; j < this.hiddenCount; j++) {
-      this.ihWeights[i][j] = weights[k++];
-    }
-  }
-
-  for (i = 0; i < this.hiddenCount + 1; i++) {
-    for (j = 0; j < this.outputCount; j++) {
-      this.hoWeights[i][j] = weights[k++];
-    }
-  }
+  this.hoWeights = matrix.reshape(weights, this.hiddenCount + 1, this.outputCount, offset);
 };
 
 NeuralNetwork.prototype.getWeights = function () {
-  var totalWeights = this.totalWeightCount();
-  var result = vector.make(totalWeights);
-  var k = 0;
-  var i, j;
-
-  // TODO: Extract copyArray with offset and flatten matrix.
-  for (i = 0; i < this.inputCount + 1; i++) {
-    for (j = 0; j < this.hiddenCount; j++) {
-      result[k++] = this.ihWeights[i][j];
-    }
-  }
-
-  for (i = 0; i < this.hiddenCount + 1; i++) {
-    for (j = 0; j < this.outputCount; j++) {
-      result[k++] = this.hoWeights[i][j];
-    }
-  }
-
-  return result;
+  var ih = matrix.flatten(this.ihWeights);
+  var ho = matrix.flatten(this.hoWeights);
+  return [].concat(ih, ho);
 };
 
 NeuralNetwork.prototype.totalWeightCount = function () {
@@ -157,59 +136,4 @@ NeuralNetwork.prototype.totalWeightCount = function () {
     (this.hiddenCount + 1) * this.outputCount;
 };
 
-function calculateError(target, output) {
-  var sum = 0.0;
-  for (var i = 0; i < target.length; i++) {
-    sum += Math.abs(target[i] - output[i]);
-  }
-  return sum;
-}
-
-function main() {
-  var nn = new NeuralNetwork(3, 4, 2);
-
-  // Arbitrary weights.
-  var weights = [
-    // Input to hidden
-    -2.0, -6.0, -1.0, -7.0,
-    0.1, 0.2, 0.3, 0.4,
-    0.5, 0.6, 0.7, 0.8,
-    0.9, 1.0, 1.1, 1.2,
-
-    // Hidden to output
-    -2.5, -5.0,
-    1.3, 1.4,
-    1.5, 1.6,
-    1.7, 1.8,
-    1.9, 2.0
-  ];
-  nn.setWeights(weights);
-
-  // Training data.
-  var xValues = [1.0, 2.0, 3.0]; // Input values
-  var tValues = [-0.8500, 0.7500]; // Target values
-
-  var eta = 0.90; // Learning rate
-  var alpha = 0.04;
-
-  // Start training.
-  var counter = 0;
-  var yValues = nn.computeOutputs(xValues);
-  var error = calculateError(tValues, yValues);
-  console.log('Initial error:', error);
-
-  while (counter < 1000 && error > 0.01) {
-    nn.updateWeights(tValues, eta, alpha);
-    yValues = nn.computeOutputs(xValues);
-    error = calculateError(tValues, yValues);
-    counter++;
-  }
-
-  // Training done.
-  console.log('Counter:', counter);
-  console.log('Minimized error:', error);
-  var bestWeights = nn.getWeights();
-  console.log(bestWeights);
-}
-
-main();
+module.exports = NeuralNetwork;
