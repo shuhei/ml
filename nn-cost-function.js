@@ -54,6 +54,9 @@ function nnCostFunction(nnParams, inputLayerSize, hiddenLayerSize, numLabels, X,
   }
 
   // Regularize cost function.
+  var T1 = matrix.flatten(matrix.pickColumns(Theta1, 1));
+  var T2 = matrix.flatten(matrix.pickColumns(Theta2, 1));
+  J += lambda / (2 * m) * (vector.product(T1, T1) + vector.product(T2, T2));
 
   // Calculate gradients.
   var gradients;

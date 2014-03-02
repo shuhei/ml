@@ -45,4 +45,12 @@ var result = nnCostFunction(nnParams, inputLayerSize, hiddenLayerSize,
 var J = result[0];
 var gradients = result[1];
 
-console.log('Cost (should be around 0.383770):', J);
+console.log('Cost without regularization (should be around 0.287629):', J);
+
+// With regularization.
+lambda = 1.0;
+result = nnCostFunction(nnParams, inputLayerSize, hiddenLayerSize,
+  numLabels, X, y, lambda);
+J = result[0];
+
+console.log('Cost with regularization (should be around 0.383770):', J)
