@@ -1,0 +1,26 @@
+{
+  "name": "ml",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/shuhei/ml.git"
+  },
+  "author": "Shuhei Kagawa <shuhei.kagawa@gmail.com>",
+  "license": "BSD",
+  "bugs": {
+    "url": "https://github.com/shuhei/ml/issues"
+  },
+  "homepage": "https://github.com/shuhei/ml",
+  "devDependencies": {
+    "chai": "~1.9.0",
+    "mocha": "~1.17.1"
+  }
+}

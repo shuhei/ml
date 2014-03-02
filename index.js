@@ -1,56 +1,48 @@
 'use strict';
 
-var NeuralNetwork = require('./neural-network');
+// Coursera Machine Learning ex4
 
-function calculateError(target, output) {
-  var sum = 0.0;
-  for (var i = 0; i < target.length; i++) {
-    sum += Math.abs(target[i] - output[i]);
-  }
-  return sum;
+var fs = require('fs');
+var matrix = require('./matrix');
+var nnCostFunction = require('./nn-cost-function');
+
+function parseCSV(csv) {
+  var lines = csv.split("\n").filter(Boolean);
+  return lines.map(function(line) {
+    return line.split(',').map(function (str) {
+      return parseFloat(str, 10);
+    });
+  });
 }
 
-var nn = new NeuralNetwork(3, 4, 2);
-
-// Arbitrary weights.
-var weights = [
-  // Input to hidden
-  -2.0, -6.0, -1.0, -7.0,
-  0.1, 0.2, 0.3, 0.4,
-  0.5, 0.6, 0.7, 0.8,
-  0.9, 1.0, 1.1, 1.2,
-
-  // Hidden to output
-  -2.5, -5.0,
-  1.3, 1.4,
-  1.5, 1.6,
-  1.7, 1.8,
-  1.9, 2.0
-];
-nn.setWeights(weights);
-
-// Training data.
-var xValues = [1.0, 2.0, 3.0]; // Input values
-var tValues = [-0.8500, 0.7500]; // Target values
-
-var eta = 0.90; // Learning rate
-var alpha = 0.04;
-
-// Start training.
-var counter = 0;
-var yValues = nn.computeOutputs(xValues);
-var error = calculateError(tValues, yValues);
-console.log('Initial error:', error);
-
-while (counter < 1000 && error > 0.01) {
-  nn.updateWeights(tValues, eta, alpha);
-  yValues = nn.computeOutputs(xValues);
-  error = calculateError(tValues, yValues);
-  counter++;
+function loadCSV(filename) {
+  return parseCSV(fs.readFileSync(filename, 'utf8'));
 }
 
-// Training done.
-console.log('Counter:', counter);
-console.log('Minimized error:', error);
-var bestWeights = nn.getWeights();
-console.log(bestWeights);
+var X = loadCSV('training.csv');
+var y = loadCSV('answer.csv').map(function (row) { return row[0] });
+console.log('Training data:', matrix.size(X));
+
+var inputLayerSize = 400; // 20x20 input image.
+var hiddenLayerSize = 25; // 25 units. Not 25 layers.
+var numLabels = 10;
+
+// Already trained Theta.
+var Theta1 = loadCSV('theta1.csv');
+var Theta2 = loadCSV('theta2.csv');
+
+console.log('Theta1:', Theta1.length, Theta1[0].length);
+console.log('Theta2:', Theta2.length, Theta2[0].length);
+
+var nnParams = [].concat(matrix.flatten(Theta1), matrix.flatten(Theta2));
+console.log('NN params:', nnParams.length);
+
+// Weight regularization parameter.
+var lambda = 0;
+
+var result = nnCostFunction(nnParams, inputLayerSize, hiddenLayerSize,
+  numLabels, X, y, lambda);
+var J = result[0];
+var gradients = result[1];
+
+console.log('Cost (should be around 0.383770):', J);

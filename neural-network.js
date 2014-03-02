@@ -2,25 +2,9 @@
 
 var vector = require('./vector');
 var matrix = require('./matrix');
+var math = require('./math');
 
-// http://msdn.microsoft.com/en-us/magazine/jj658979.aspx
-
-function tanh(x) {
-  return (Math.exp(x) - Math.exp(-x)) / (Math.exp(x) + Math.exp(-x));
-}
-
-// Used as the input-to-hidden activation function.
-function sigmoid(x) {
-  if (x < -45.0) return 0.0;
-  else if (x > 45.0) return 1.0;
-  else return 1.0 / (1.0 + Math.exp(-x));
-}
-
-function hyperTan(x) {
-  if (x < -10.0) return -1.0;
-  else if (x > 10.0) return 1.0;
-  else return tanh(x);
-}
+// Ported from http://msdn.microsoft.com/en-us/magazine/jj658979.aspx.
 
 function NeuralNetwork(inputCount, hiddenCount, outputCount) {
   this.inputCount = inputCount;
@@ -52,11 +36,11 @@ NeuralNetwork.prototype.computeOutputs = function (xValues) {
 
   // Compute input-to-hidden weighted sums.
   var ihSums = vector.applyMatrix([1.0].concat(this.inputs), this.ihWeights);
-  this.ihOutputs = ihSums.map(sigmoid);
+  this.ihOutputs = ihSums.map(math.sigmoid);
 
-  // TODO: Why different function `hyperTan`?
+  // TODO: Why different function `hyperTanh`?
   var hoSums = vector.applyMatrix([1.0].concat(this.ihOutputs), this.hoWeights);
-  this.outputs = hoSums.map(hyperTan);
+  this.outputs = hoSums.map(math.hyperTanh);
 
   var result = vector.make(this.outputCount);
   vector.copy(this.outputs, result);
@@ -91,7 +75,7 @@ NeuralNetwork.prototype.updateWeights = function (tValues, eta, alpha) {
     hiddenGradients[i] = derivative * sum;
   }
 
-  // -- Update weights.
+  // -- Update weights with gradients.
 
   // Update input-to-hidden weights.
   for (i = 0; i < this.inputCount + 1; i++) {

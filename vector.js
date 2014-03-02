@@ -14,7 +14,7 @@ function make(length, initialValue) {
 
 function copy(from, to) {
   if (from.length !== to.length) {
-    throw new Error('Different length!');
+    throw new Error('Different size!');
   }
   for (var i = 0; i < from.length; i++) {
     to[i] = from[i];
@@ -23,7 +23,7 @@ function copy(from, to) {
 
 function add(from, to) {
   if (from.length !== to.length) {
-    throw new Error('Different length!');
+    throw new Error('Different size!');
   }
   for (var i = 0; i < from.length; i++) {
     to[i] += from[i];
@@ -42,9 +42,22 @@ function applyMatrix(vector, matrix) {
   return result;
 }
 
+function product(left, right) {
+  if (left.length !== right.length) {
+    throw new Error('Different size!');
+  }
+  var sum = 0;
+  var i;
+  for (i = 0; i < left.length; i++) {
+    sum += left[i] * right[i];
+  }
+  return sum;
+}
+
 module.exports = {
   make: make,
   copy: copy,
   add: add,
+  product: product,
   applyMatrix: applyMatrix
 };
